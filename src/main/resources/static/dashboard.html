@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Performance Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --bg-card: rgba(20, 27, 45, 0.7);
+            --bg-card-hover: rgba(26, 36, 60, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-color-active: rgba(99, 102, 241, 0.4);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.15);
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --info-glow: rgba(6, 182, 212, 0.15);
+            --transition-speed: 0.25s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        /* Layout Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Style */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-size: 2.25rem;
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .refresh-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .refresh-btn:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            transform: translateY(-2px);
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+            opacity: 0;
+            transition: opacity var(--transition-speed);
+        }
+
+        .kpi-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-color-active);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+
+        .kpi-card.purple::before { background: var(--primary); }
+        .kpi-card.cyan::before { background: var(--info); }
+        .kpi-card.emerald::before { background: var(--success); }
+        .kpi-card.amber::before { background: var(--warning); }
+
+        .kpi-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Progress Bar inside card */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: auto;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 3px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .progress-bar.purple { background: var(--primary); }
+        .progress-bar.cyan { background: var(--info); }
+        .progress-bar.emerald { background: var(--success); }
+
+        /* Main Content Panel */
+        .panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-title h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        /* Table Design */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1rem 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr {
+            transition: background-color var(--transition-speed) ease;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .badge.on {
+            background-color: var(--success-glow);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+        }
+
+        .badge.off {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Action Buttons */
+        .action-group {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.4rem 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-card-hover);
+            transform: translateY(-1px);
+        }
+
+        .action-btn.imp-btn:hover {
+            color: var(--info);
+            border-color: var(--info);
+            box-shadow: 0 0 8px var(--info-glow);
+        }
+
+        .action-btn.click-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        .action-btn.conv-btn:hover {
+            color: var(--success);
+            border-color: var(--success);
+            box-shadow: 0 0 8px var(--success-glow);
+        }
+
+        .action-btn.edit-btn:hover {
+            color: var(--warning);
+            border-color: var(--warning);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.15);
+        }
+
+        /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: #121928;
+            border: 1px solid var(--border-color-active);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            padding: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: modalFadeIn var(--transition-speed) ease-out;
+            position: relative;
+        }
+
+        @keyframes modalFadeIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .close-modal {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: color var(--transition-speed);
+        }
+
+        .close-modal:hover {
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all var(--transition-speed);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            border: 1px solid var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: #5558e6;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notification Toast */
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #121928;
+            color: var(--text-primary);
+            text-align: center;
+            border-radius: 8px;
+            border: 1px solid var(--border-color-active);
+            padding: 1rem;
+            position: fixed;
+            z-index: 1100;
+            right: 30px;
+            bottom: 30px;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+        }
+
+        .toast.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success-toast {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error-toast {
+            border-left: 4px solid var(--accent-danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-title">
+            <h1>Campaign Performance Dashboard</h1>
+            <p>Real-time analytics and tracking simulator for campaign engagement</p>
+        </div>
+        <button class="refresh-btn" onclick="refreshData()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Refresh Data
+        </button>
+    </header>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+        <div class="kpi-card purple">
+            <span class="kpi-label">Total Impressions</span>
+            <span class="kpi-value" id="kpi-impressions">0</span>
+            <div class="progress-container">
+                <div class="progress-bar purple" id="progress-impressions" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="kpi-card cyan">
+            <span class="kpi-label">Total Clicks</span>
+            <span class="kpi-value" id="kpi-clicks">0</span>
+            <div class="progress-container">
+                <div class="progress-bar cyan" id="progress-clicks" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="kpi-card emerald">
+            <span class="kpi-label">Total Conversions</span>
+            <span class="kpi-value" id="kpi-conversions">0</span>
+            <div class="progress-container">
+                <div class="progress-bar emerald" id="progress-conversions" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="kpi-card purple">
+            <span class="kpi-label">Click Through Rate (CTR)</span>
+            <span class="kpi-value" id="kpi-ctr">0.00%</span>
+            <div class="progress-container">
+                <div class="progress-bar purple" id="progress-ctr"></div>
+            </div>
+        </div>
+        <div class="kpi-card cyan">
+            <span class="kpi-label">Conversion Rate</span>
+            <span class="kpi-value" id="kpi-conversion-rate">0.00%</span>
+            <div class="progress-container">
+                <div class="progress-bar cyan" id="progress-conversion-rate"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campaigns Section -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h2>Campaign Engagement & Simulator</h2>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="campaigns-table">
+                <thead>
+                    <tr>
+                        <th>Campaign Name</th>
+                        <th>Status</th>
+                        <th>Impressions</th>
+                        <th>Clicks</th>
+                        <th>Conversions</th>
+                        <th>CTR</th>
+                        <th>Conv. Rate</th>
+                        <th>Simulate Events</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="campaigns-list">
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            <div class="spinner"></div> Loading campaigns...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Metrics Modal -->
+<div class="modal" id="metrics-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Edit Campaign Metrics</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="metrics-form" onsubmit="saveMetrics(event)">
+            <input type="hidden" id="edit-campaign-id">
+            <div class="form-group">
+                <label for="edit-impressions">Impressions</label>
+                <input type="number" id="edit-impressions" class="form-control" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-clicks">Clicks</label>
+                <input type="number" id="edit-clicks" class="form-control" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-conversions">Conversions</label>
+                <input type="number" id="edit-conversions" class="form-control" min="0" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="save-metrics-btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast Alert -->
+<div id="toast" class="toast">
+    <span id="toast-message">Notification</span>
+</div>
+
+<script>
+    // Configuration
+    const API_BASE = '/v1/campaigns';
+
+    // UI elements
+    const elements = {
+        totalImpressions: document.getElementById('kpi-impressions'),
+        totalClicks: document.getElementById('kpi-clicks'),
+        totalConversions: document.getElementById('kpi-conversions'),
+        ctr: document.getElementById('kpi-ctr'),
+        conversionRate: document.getElementById('kpi-conversion-rate'),
+        progressCtr: document.getElementById('progress-ctr'),
+        progressConvRate: document.getElementById('progress-conversion-rate'),
+        campaignsList: document.getElementById('campaigns-list'),
+        modal: document.getElementById('metrics-modal'),
+        form: document.getElementById('metrics-form'),
+        editId: document.getElementById('edit-campaign-id'),
+        editImpressions: document.getElementById('edit-impressions'),
+        editClicks: document.getElementById('edit-clicks'),
+        editConversions: document.getElementById('edit-conversions'),
+        toast: document.getElementById('toast'),
+        toastMsg: document.getElementById('toast-message')
+    };
+
+    // Load initial data on mount
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshData();
+    });
+
+    function showToast(message, type = 'success') {
+        elements.toastMsg.innerText = message;
+        elements.toast.className = 'toast show';
+        if (type === 'success') {
+            elements.toast.classList.add('success-toast');
+        } else {
+            elements.toast.classList.add('error-toast');
+        }
+        setTimeout(() => {
+            elements.toast.classList.remove('show');
+        }, 3000);
+    }
+
+    async function refreshData() {
+        await Promise.all([
+            fetchAnalytics(),
+            fetchCampaigns()
+        ]);
+    }
+
+    // Fetch total system metrics
+    async function fetchAnalytics() {
+        try {
+            const res = await fetch(`${API_BASE}/analytics`);
+            if (!res.ok) throw new Error('Failed to fetch analytics');
+            const data = await res.json();
+            
+            // Update UI
+            elements.totalImpressions.innerText = Number(data.totalImpressions).toLocaleString();
+            elements.totalClicks.innerText = Number(data.totalClicks).toLocaleString();
+            elements.totalConversions.innerText = Number(data.totalConversions).toLocaleString();
+            
+            elements.ctr.innerText = `${data.clickThroughRate.toFixed(2)}%`;
+            elements.progressCtr.style.width = `${Math.min(data.clickThroughRate * 2, 100)}%`; // scale visually
+            
+            elements.conversionRate.innerText = `${data.conversionRate.toFixed(2)}%`;
+            elements.progressConvRate.style.width = `${Math.min(data.conversionRate * 2, 100)}%`; // scale visually
+        } catch (err) {
+            console.error(err);
+            showToast('Error fetching system analytics', 'error');
+        }
+    }
+
+    // Fetch campaigns list (request size 100 to list campaigns)
+    async function fetchCampaigns() {
+        try {
+            const res = await fetch(`${API_BASE}?size=100`);
+            if (!res.ok) throw new Error('Failed to fetch campaigns');
+            const pageData = await res.json();
+            const campaigns = pageData.content || [];
+
+            if (campaigns.length === 0) {
+                elements.campaignsList.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem;">
+                            <div class="empty-state">
+                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v3m-9 5h18c.9 0 1.6-.7 1.6-1.6V7.6C21.6 6.7 20.9 6 20 6H4c-.9 0-1.6.7-1.6 1.6v9.8C2.4 17.3 3.1 18 4 18z"/>
+                                </svg>
+                                <p>No campaigns found in the database. Create some campaigns first!</p>
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            elements.campaignsList.innerHTML = campaigns.map(c => {
+                const impressions = c.impressions || 0;
+                const clicks = c.clicks || 0;
+                const conversions = c.conversions || 0;
+                
+                const ctr = impressions > 0 ? ((clicks / impressions) * 100) : 0;
+                const convRate = clicks > 0 ? ((conversions / clicks) * 100) : 0;
+
+                const statusClass = String(c.status).toLowerCase() === 'on' ? 'on' : 'off';
+
+                return `
+                    <tr>
+                        <td style="font-weight: 500;">${escapeHtml(c.name)}</td>
+                        <td><span class="badge ${statusClass}">${escapeHtml(c.status)}</span></td>
+                        <td>${impressions.toLocaleString()}</td>
+                        <td>${clicks.toLocaleString()}</td>
+                        <td>${conversions.toLocaleString()}</td>
+                        <td style="font-weight: 500; color: var(--primary);">${ctr.toFixed(2)}%</td>
+                        <td style="font-weight: 500; color: var(--success);">${convRate.toFixed(2)}%</td>
+                        <td>
+                            <div class="action-group">
+                                <button class="action-btn imp-btn" onclick="trackImpression('${c.id}')">+ Imp</button>
+                                <button class="action-btn click-btn" onclick="trackClick('${c.id}')">+ Click</button>
+                                <button class="action-btn conv-btn" onclick="trackConversion('${c.id}')">+ Conv</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="openEditModal('${c.id}', ${impressions}, ${clicks}, ${conversions})">
+                                Edit Metrics
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error(err);
+            elements.campaignsList.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--accent-danger); padding: 3rem;">
+                        Failed to load campaigns list.
+                    </td>
+                </tr>`;
+            showToast('Error fetching campaigns list', 'error');
+        }
+    }
+
+    // Increments
+    async function trackImpression(campaignId) {
+        try {
+            const res = await fetch(`${API_BASE}/${campaignId}/track-impression`, { method: 'POST' });
+            if (!res.ok) throw new Error('Failed to track impression');
+            showToast('Impression tracked successfully');
+            refreshData();
+        } catch (err) {
+            console.error(err);
+            showToast('Error tracking impression', 'error');
+        }
+    }
+
+    async function trackClick(campaignId) {
+        try {
+            const res = await fetch(`${API_BASE}/${campaignId}/track-click`, { method: 'POST' });
+            if (!res.ok) throw new Error('Failed to track click');
+            showToast('Click tracked successfully');
+            refreshData();
+        } catch (err) {
+            console.error(err);
+            showToast('Error tracking click', 'error');
+        }
+    }
+
+    async function trackConversion(campaignId) {
+        try {
+            const res = await fetch(`${API_BASE}/${campaignId}/track-conversion`, { method: 'POST' });
+            if (!res.ok) throw new Error('Failed to track conversion');
+            showToast('Conversion tracked successfully');
+            refreshData();
+        } catch (err) {
+            console.error(err);
+            showToast('Error tracking conversion', 'error');
+        }
+    }
+
+    // Modal operations
+    function openEditModal(id, impressions, clicks, conversions) {
+        elements.editId.value = id;
+        elements.editImpressions.value = impressions;
+        elements.editClicks.value = clicks;
+        elements.editConversions.value = conversions;
+        elements.modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        elements.modal.style.display = 'none';
+        elements.form.reset();
+    }
+
+    // Close modal if clicked outside
+    window.onclick = function(event) {
+        if (event.target === elements.modal) {
+            closeModal();
+        }
+    }
+
+    // Save Metrics Form Submission
+    async function saveMetrics(event) {
+        event.preventDefault();
+        const campaignId = elements.editId.value;
+        const impressions = parseInt(elements.editImpressions.value);
+        const clicks = parseInt(elements.editClicks.value);
+        const conversions = parseInt(elements.editConversions.value);
+
+        if (clicks > impressions) {
+            showToast('Warning: Clicks should usually not exceed impressions', 'error');
+        }
+        if (conversions > clicks) {
+            showToast('Warning: Conversions should usually not exceed clicks', 'error');
+        }
+
+        try {
+            const submitBtn = document.getElementById('save-metrics-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Saving...';
+
+            const res = await fetch(`${API_BASE}/${campaignId}/metrics`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    impressions: impressions,
+                    clicks: clicks,
+                    conversions: conversions
+                })
+            });
+
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.message || 'Failed to update metrics');
+            }
+
+            showToast('Campaign metrics updated successfully');
+            closeModal();
+            refreshData();
+        } catch (err) {
+            console.error(err);
+            showToast(err.message || 'Error saving metrics', 'error');
+        } finally {
+            const submitBtn = document.getElementById('save-metrics-btn');
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'Save Changes';
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+</body>
+</html>
