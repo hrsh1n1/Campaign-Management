@@ -20,6 +20,24 @@ The **Campaign Management System** is an application designed to manage advertis
 
 - **Form Validation**: Includes validation mechanisms to ensure that data entered into forms is correct and complete before processing.
 
+- **Campaign Performance Dashboard**: Provides a premium, real-time glassmorphic UI representing impressions, clicks, conversions, click-through rate (CTR), and conversion rates across all campaigns.
+
+## Campaign Performance Dashboard
+
+The **Campaign Performance Dashboard** allows advertisers to track and simulate campaign engagement. 
+
+### How to Access
+Once the application is running, open your browser and navigate to:
+`http://localhost:8080/dashboard.html`
+
+### Engagement Metrics APIs
+We have introduced several endpoints under `/v1/campaigns` to manage metrics:
+- `PUT /v1/campaigns/{campaignId}/metrics`: Overwrites impressions, clicks, and conversions for a campaign (with validation checks).
+- `POST /v1/campaigns/{campaignId}/track-impression`: Increments impressions by 1.
+- `POST /v1/campaigns/{campaignId}/track-click`: Increments clicks by 1.
+- `POST /v1/campaigns/{campaignId}/track-conversion`: Increments conversions by 1.
+- `GET /v1/campaigns/analytics`: Returns system-wide aggregated metrics, including total impressions, total clicks, total conversions, system CTR (%), and system conversion rate (%).
+
 ## Documentation
 
 The **Campaign Management System** provides comprehensive API documentation using Swagger. You can access the Swagger UI to explore and test the API endpoints.
